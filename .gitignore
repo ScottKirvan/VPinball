@@ -1,0 +1,9 @@
+x64/Debug/*
+.vs/*
+.vscode/*
+shader/*
+
+VisualPinball.net2019.vcxproj.user
+vpinball_i.c
+vpinball_i.h
+vpinball.tlb
