@@ -265,7 +265,7 @@ void EnumerateDisplayModes(const int display, std::vector<VideoMode>& modes)
    if (d3d == NULL)
    {
       ShowError("Could not create D3D9 object.");
-      throw 0;
+      return;
    }
 
    //for (int j = 0; j < 2; ++j)
@@ -309,7 +309,7 @@ BOOL CALLBACK MonitorEnumList(__in  HMONITOR hMonitor, __in  HDC hdcMonitor, __i
    config.display = (int)data->size(); // This number does neither map to the number form display settings nor something else.
    config.adapter = -1;
    memcpy(config.DeviceName, info.szDevice, CCHDEVICENAME); // Internal display name e.g. "\\\\.\\DISPLAY1"
-   data->insert(std::pair<std::string, DisplayConfig>(std::string(config.DeviceName), config));
+   data->insert(std::pair<std::string, DisplayConfig>(config.DeviceName, config));
    return TRUE;
 }
 
@@ -326,7 +326,7 @@ int getDisplayList(std::vector<DisplayConfig>& displays)
    if (pD3D == NULL)
    {
       ShowError("Could not create D3D9 object.");
-      throw 0;
+      return -1;
    }
    // Map the displays to the DX9 adapter. Otherwise this leads to an performance impact on systems with multiple GPUs
    int adapterCount = pD3D->GetAdapterCount();
@@ -465,10 +465,7 @@ void RenderDevice::CreateDevice(int &refreshrate, UINT adapterIndex)
    if (mDirect3DCreate9Ex)
    {
       const HRESULT hr = mDirect3DCreate9Ex(D3D_SDK_VERSION, &m_pD3DEx);
-      if (FAILED(hr))
-         ReportError("Fatal Error: unable to create D3D9Ex object!", hr, __FILE__, __LINE__);
-
-      if (m_pD3DEx == NULL)
+      if (FAILED(hr) || (m_pD3DEx == NULL))
       {
          ShowError("Could not create D3D9Ex object.");
          throw 0;
@@ -713,7 +710,7 @@ void RenderDevice::CreateDevice(int &refreshrate, UINT adapterIndex)
    if (FAILED(hr))
       ReportError("Fatal Error: unable to create blur buffer!", hr, __FILE__, __LINE__);
 
-   // alloc temporary buffer for postprocessing
+   // alloc temporary buffer for stereo3D/post-processing AA
    if (m_stereo3D || (m_FXAA > 0))
    {
       hr = m_pD3DDevice->CreateTexture(m_width, m_height, 1,
@@ -1256,9 +1253,7 @@ void RenderDevice::CopyDepth(D3DTexture* dest, D3DTexture* src)
    IDirect3DSurface9 *oldRT;
    CHECKD3D(m_pD3DDevice->GetRenderTarget(0, &oldRT));
 
-   IDirect3DSurface9 *destTextureSurface;
-   CHECKD3D(dest->GetSurfaceLevel(0, &destTextureSurface));
-   SetRenderTarget(destTextureSurface);
+   SetRenderTarget(dest);
 
    FBShader->SetTexture("Texture0", src);
    FBShader->SetFloat("mirrorFactor", 1.f); //!! use separate pass-through shader instead??
@@ -1275,7 +1270,6 @@ void RenderDevice::CopyDepth(D3DTexture* dest, D3DTexture* src)
 
    SetRenderTarget(oldRT);
    SAFE_RELEASE_NO_RCC(oldRT);
-   SAFE_RELEASE_NO_RCC(destTextureSurface);
 
    EndScene(); //!!
 #endif
@@ -1519,6 +1513,14 @@ void RenderDevice::SetTextureStageState(const DWORD p1, const D3DTEXTURESTAGESTA
 void RenderDevice::SetRenderTarget(RenderTarget* surf)
 {
    CHECKD3D(m_pD3DDevice->SetRenderTarget(0, surf));
+}
+
+void RenderDevice::SetRenderTarget(D3DTexture* tex)
+{
+   RenderTarget* tmpSurface;
+   tex->GetSurfaceLevel(0, &tmpSurface);
+   CHECKD3D(m_pD3DDevice->SetRenderTarget(0, tmpSurface));
+   SAFE_RELEASE_NO_RCC(tmpSurface); //!!
 }
 
 void RenderDevice::SetZBuffer(RenderTarget* surf)
