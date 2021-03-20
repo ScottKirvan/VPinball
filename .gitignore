@@ -1,7 +1,7 @@
-x64/Debug/*
 .vs/*
 .vscode/*
 shader/*
+x64/*
 
 VisualPinball.net2019.vcxproj.user
 vpinball_i.c
