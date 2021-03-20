@@ -12,4 +12,4 @@ running x64\VPinballX.exe will fail.  The following dlls are missing: FreeImage6
 
 These DLLs are found, precompiled, in the repository:  dll/x64 directory.  Just copy them to your x64/Debug or Release folders (depending on which you're using)
 
-copy scripts folder from an existing install to x64/Debug
+copy scripts folder to x64/Debug
