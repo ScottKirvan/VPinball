@@ -2,6 +2,7 @@
 .vscode/*
 shader/*
 x64/*
+build/*
 
 VisualPinball.net2019.vcxproj.user
 vpinball_i.c
